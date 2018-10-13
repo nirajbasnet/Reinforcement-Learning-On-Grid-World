@@ -7,15 +7,15 @@ cell_score_max = 0.2
 Width = 100
 (x, y) = (10, 5)
 actions = ["up", "down", "left", "right"]
+characters=["player1","player2","target"]
 board = Canvas(master, width=x*Width, height=y*Width)
-player_home=(4,2)
-player = (4, 2)
+player_home=[(4,2),(1,2)]
+player = [(4, 2),(1,2)]
 score = 1
 restart = False
 walk_reward = -0.04
-
-walls = [(1, 1), (1, 2), (2, 1), (2, 2)]
-target_state_current= [(9, 3)]
+target_home=[(9,3)]
+targets= [(9, 3)]
 cell_scores = {}
 
 
@@ -51,8 +51,8 @@ def render_grid():
             for action in actions:
                 temp[action] = create_triangle(i, j, action)
             cell_scores[(i,j)] = temp
-    for (i,j) in target_state_current:
-        board.create_rectangle(i*Width, j*Width, (i+1)*Width, (j+1)*Width, fill="red", width=1)
+    # for (i,j) in targets:
+    #     board.create_rectangle(i*Width, j*Width, (i+1)*Width, (j+1)*Width, fill="red", width=1)
 
 render_grid()
 
@@ -71,17 +71,52 @@ def set_cell_score(state, action, val):
     board.itemconfigure(triangle, fill=color)
 
 
-def try_move(dx, dy):
-    global player, x, y, score, walk_reward, me, restart
+def map_action_commands(action_cmd):
+    if action_cmd=="up":
+        return 0,-1
+    elif action_cmd=="down":
+        return 0,1
+    elif action_cmd=="right":
+        return 1,0
+    elif action_cmd=="left":
+        return -1,0
+    else:
+        return 0,0
+
+
+def try_move(agent, action_cmd):
+    global player,targets,characters, x, y, score, walk_reward, me,me2,target, restart
+    player_id=0
+    target_id=1
     if restart == True:
         restart_game()
-    new_x = player[0] + dx
-    new_y = player[1] + dy
+    if agent == characters[0]:
+        player_id = 0
+        display_object=me
+        old_x=player[0][0]
+        old_y=player[0][1]
+    elif agent == characters[1]:
+        player_id = 1
+        display_object = me2
+        old_x = player[1][0]
+        old_y = player[1][1]
+    elif agent == characters[2]:
+        target_id = 0
+        display_object = target
+        old_x = targets[0][0]
+        old_y = targets[0][1]
+    dx,dy=map_action_commands(action_cmd)
+    new_x = old_x + dx
+    new_y = old_y + dy
     score += walk_reward
     if (new_x >= 0) and (new_x < x) and (new_y >= 0) and (new_y < y):
-        board.coords(me, new_x*Width+Width*2/10, new_y*Width+Width*2/10, new_x*Width+Width*8/10, new_y*Width+Width*8/10)
-        player = (new_x, new_y)
-    for (i, j) in target_state_current:
+        board.coords(display_object, new_x*Width+Width*2/10, new_y*Width+Width*2/10, new_x*Width+Width*8/10, new_y*Width+Width*8/10)
+        if target_id==0:
+            targets[target_id]=(new_x,new_y)
+            return
+        else:
+            player[player_id] = (new_x, new_y)
+    for (i, j) in targets:
         if new_x == i and new_y == j:
             score -= walk_reward
             score += 1
@@ -94,24 +129,31 @@ def try_move(dx, dy):
 
 
 def call_up(event):
-    try_move(0, -1)
+    try_move(characters[0],actions[0])
 
 def call_down(event):
-    try_move(0, 1)
+    try_move(characters[0],actions[1])
 
 def call_left(event):
-    try_move(-1, 0)
+    try_move(characters[0],actions[2])
 
 def call_right(event):
-    try_move(1, 0)
-
+    try_move(characters[0],actions[3])
 
 def restart_game():
-    global player, score, me, restart
-    player = player_home
+    global player, score, me,me2,target, restart
+    player[0] = player_home[0]
+    player[1]=player_home[1]
+    targets[0]=target_home[0]
     score = 1
+    board.coords(me, player_home[0][0]*Width+Width*2/10, player_home[0][1]*Width+Width*2/10, player_home[0][0]*Width+Width*8/10, player_home[0][1]*Width+Width*8/10)
+    board.coords(me2, player_home[1][0] * Width + Width * 2 / 10, player_home[1][1] * Width + Width * 2 / 10,
+                 player_home[1][0] * Width + Width * 8 / 10, player_home[1][1] * Width + Width * 8 / 10)
+    board.coords(target, target_home[0][0] * Width + Width * 2 / 10, target_home[0][1] * Width + Width * 2 / 10,
+                 target_home[0][0] * Width + Width * 8 / 10, target_home[0][1] * Width + Width * 8 / 10)
     restart = False
-    board.coords(me, player[0]*Width+Width*2/10, player[1]*Width+Width*2/10, player[0]*Width+Width*8/10, player[1]*Width+Width*8/10)
+
+
 
 def has_restarted():
     return restart
@@ -121,8 +163,13 @@ master.bind("<Down>", call_down)
 master.bind("<Right>", call_right)
 master.bind("<Left>", call_left)
 
-me = board.create_rectangle(player[0]*Width+Width*2/10, player[1]*Width+Width*2/10,
-                            player[0]*Width+Width*8/10, player[1]*Width+Width*8/10, fill="blue", width=1, tag="me")
+me = board.create_rectangle(player[0][0]*Width+Width*2/10, player[0][1]*Width+Width*2/10,
+                            player[0][0]*Width+Width*8/10, player[0][1]*Width+Width*8/10, fill="blue", width=1, tag="me")
+me2 = board.create_rectangle(player[1][0]*Width+Width*2/10, player[1][1]*Width+Width*2/10,
+                            player[1][0]*Width+Width*8/10, player[1][1]*Width+Width*8/10, fill="orange", width=1, tag="me2")
+target = board.create_rectangle(targets[0][0]*Width+Width*2/10, targets[0][1]*Width+Width*2/10,
+                                targets[0][0]*Width+Width*8/10, targets[0][1]*Width+Width*8/10, fill="red", width=1, tag="target")
+
 
 board.grid(row=0, column=0)
 
