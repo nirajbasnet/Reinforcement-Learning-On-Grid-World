@@ -91,7 +91,6 @@ def try_move(dx, dy):
                 print("Fail! score: ", score)
             restart = True
             return
-    #print "score: ", score
 
 
 def call_up(event):
