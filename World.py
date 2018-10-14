@@ -17,6 +17,7 @@ walk_reward = -0.04
 target_home=[(9,3)]
 targets= [(9, 3)]
 cell_scores = {}
+episode=0
 
 
 def create_triangle(i, j, action):
@@ -85,9 +86,10 @@ def map_action_commands(action_cmd):
 
 
 def try_move(agent, action_cmd):
-    global player,targets,characters, x, y, score, walk_reward, me,me2,target, restart
+    global player,episode,targets,characters, score, walk_reward, me,me2,target, restart
     player_id=0
     target_id=1
+  #  score=0
     if restart == True:
         restart_game()
     if agent == characters[0]:
@@ -95,11 +97,13 @@ def try_move(agent, action_cmd):
         display_object=me
         old_x=player[0][0]
         old_y=player[0][1]
+        score += walk_reward
     elif agent == characters[1]:
         player_id = 1
         display_object = me2
         old_x = player[1][0]
         old_y = player[1][1]
+        score += walk_reward
     elif agent == characters[2]:
         target_id = 0
         display_object = target
@@ -108,25 +112,27 @@ def try_move(agent, action_cmd):
     dx,dy=map_action_commands(action_cmd)
     new_x = old_x + dx
     new_y = old_y + dy
-    score += walk_reward
+
     if (new_x >= 0) and (new_x < x) and (new_y >= 0) and (new_y < y):
         board.coords(display_object, new_x*Width+Width*2/10, new_y*Width+Width*2/10, new_x*Width+Width*8/10, new_y*Width+Width*8/10)
         if target_id==0:
+            set_cell_score(targets[target_id], action_cmd, 0.1)
             targets[target_id]=(new_x,new_y)
+            set_cell_score(targets[target_id], action_cmd, 1)
             return
         else:
             player[player_id] = (new_x, new_y)
     for (i, j) in targets:
-        if new_x == i and new_y == j:
+        if player[0][0] == i and player[0][1] == j:
+            episode += 1
             score -= walk_reward
             score += 1
             if score > 0:
-                print("Success! score: ", score)
+                print("epi:", episode, " Success! score: ", score)
             else:
                 print("Fail! score: ", score)
             restart = True
             return
-
 
 def call_up(event):
     try_move(characters[0],actions[0])
