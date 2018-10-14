@@ -13,12 +13,12 @@ player_home=[(4,2),(1,2)]
 player = [(4, 2),(1,2)]
 score = 1
 restart = False
-walk_reward = -0.04
+walk_reward = -0.05
 target_home=[(9,3)]
 targets= [(9, 3)]
 cell_scores = {}
 episode=0
-
+moves=0
 
 def create_triangle(i, j, action):
     if action == actions[0]:
@@ -86,7 +86,7 @@ def map_action_commands(action_cmd):
 
 
 def try_move(agent, action_cmd):
-    global player,episode,targets,characters, score, walk_reward, me,me2,target, restart
+    global player,episode,targets,characters, score, walk_reward, me,me2,target, restart , moves
     player_id=0
     target_id=1
   #  score=0
@@ -112,11 +112,11 @@ def try_move(agent, action_cmd):
     dx,dy=map_action_commands(action_cmd)
     new_x = old_x + dx
     new_y = old_y + dy
-
+    moves += 1
     if (new_x >= 0) and (new_x < x) and (new_y >= 0) and (new_y < y):
         board.coords(display_object, new_x*Width+Width*2/10, new_y*Width+Width*2/10, new_x*Width+Width*8/10, new_y*Width+Width*8/10)
         if target_id==0:
-            set_cell_score(targets[target_id], action_cmd, 0.1)
+            set_cell_score(targets[target_id], action_cmd, 0.0)
             targets[target_id]=(new_x,new_y)
             set_cell_score(targets[target_id], action_cmd, 1)
             return
@@ -128,9 +128,10 @@ def try_move(agent, action_cmd):
             score -= walk_reward
             score += 1
             if score > 0:
-                print("epi:", episode, " Success! score: ", score)
+                print("epi:", episode, " Success! score: ", score, "moves:",moves/2)
             else:
                 print("Fail! score: ", score)
+            moves=0
             restart = True
             return
 
